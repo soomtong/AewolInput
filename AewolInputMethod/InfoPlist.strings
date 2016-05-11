@@ -7,6 +7,8 @@
 */
 
 com.aewolstory.inputmethod.han2 = "애월 두벌식";
+com.aewolstory.inputmethod.han390 = "애월 세벌식 390";
+com.aewolstory.inputmethod.han391 = "애월 세벌식 391";
 
 CFBundleName = "애월입력기";
 CFBundleDisplayName = "애월입력기";

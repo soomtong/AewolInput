@@ -11,6 +11,7 @@
 
 @interface AewolInputController : IMKInputController {
     HangulInputContext *ctx;
+    NSString *keyboardType;
     BOOL debug;
 }
 

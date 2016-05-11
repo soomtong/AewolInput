@@ -6,9 +6,12 @@
 //  Copyright (c) 2014년 aewolstory. All rights reserved.
 //
 
+
 #import "AewolInputController.h"
 #import "AppDelegate.h"
 #import <wchar.h>
+
+#import <Carbon/Carbon.h>
 
 #define AWLog(...) {if (debug) NSLog(__VA_ARGS__);}
 
@@ -80,6 +83,15 @@
 #define AEWOL_DVORAK       ""
 #define AEWOL_DVORAK_SHIFT ""
 
+NSDictionary *layoutTable = nil;
++ (void)initialize {
+    layoutTable = [[NSDictionary alloc] initWithObjectsAndKeys:
+                   @"2", @"com.aewolstory.inputmethod.han2",
+                   @"3f", @"com.aewolstory.inputmethod.han391",
+                   @"39", @"com.aewolstory.inputmethod.han390",
+                   nil];
+}
+
 - (BOOL)handleEvent:(NSEvent *)event client:(id)sender
 {
     if (event.type != NSKeyDown) {
@@ -150,9 +162,39 @@
 
 - (void)setValue:(id)value forTag:(long)tag client:(id)sender
 {
+    [self flushPreedit:sender];
+    if (ctx) hangul_ic_delete(ctx);
+    
     NSString *newMode = (NSString *)value;
-    // kTextServiceInputModePropertyTag
-    AWLog(@"newMode = %@ for tag = %ld, client = %@", newMode, tag, sender);
+    NSString *libHangulID = layoutTable[newMode];
+    
+    ctx = hangul_ic_new([libHangulID UTF8String]);
+
+    AWLog(@"newMode = %@ (%@) for tag = %ld, client = %@", newMode, libHangulID, tag, sender);
+
+    /*
+    BOOL change = false;
+    
+    switch (tag) {
+        case kTextServiceInputModePropertyTag:
+            if (![value isEqualToString:keyboardType]) {
+                [self flushPreedit:sender];
+                change = true;
+            }
+            break;
+        default:
+            break;
+    }
+    
+    if (change) {
+        NSString *newMode = (NSString *)value;
+        NSString *libHangulID = layoutTable[newMode];
+        
+        AWLog(@"newMode = %@ (%@) for tag = %ld, client = %@", newMode, libHangulID, tag, sender);
+        
+        hangul_ic_select_keyboard(ctx, [libHangulID UTF8String]);
+    }
+     */
 }
 
 - (id)valueForTag:(long)tag client:(id)sender
@@ -170,7 +212,19 @@
 - (void)activateServer:(id)sender
 {
     AWLog(@"activate %@", sender);
-    ctx = hangul_ic_new("2");
+//    ctx = hangul_ic_new("2");
+    
+    TISInputSourceRef ref = TISCopyCurrentKeyboardInputSource();
+    NSString *layout = (__bridge NSString *)(TISGetInputSourceProperty(ref, (CFStringRef)kTISPropertyInputModeID));
+    
+    // set
+    keyboardType = layout;
+    
+    AWLog(@"현재 입력 소스​: %@", layout);
+    NSString *libHangulID = layoutTable[layout];
+    
+    AWLog(@"테이블: %@", libHangulID);
+    ctx = hangul_ic_new([libHangulID UTF8String]);
 }
 
 - (void)deactivateServer:(id)sender
